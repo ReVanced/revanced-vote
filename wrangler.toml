@@ -1,0 +1,7 @@
+name = "revanced-vote"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "revanced-vote"
+database_id = "database-id"
