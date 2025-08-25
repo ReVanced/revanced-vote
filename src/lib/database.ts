@@ -38,6 +38,14 @@ export class DatabaseService {
 		await this.db.batch(participantStatements);
 	}
 
+	async getSessionKeys(): Promise<string[]> {
+		const { results } = await this.db
+			.prepare('SELECT key FROM sessions')
+			.all<{ key: string }>();
+
+		return results.map((row) => row.key);
+	}
+
 	async getSession(sessionKey: string): Promise<Session | null> {
 		const result = await this.db
 			.prepare('SELECT * FROM sessions WHERE key = ? LIMIT 1')

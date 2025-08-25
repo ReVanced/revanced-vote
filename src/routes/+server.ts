@@ -43,12 +43,32 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			participants: body.participants
 		});
 
-		return json({ sessionKey });
+		return json(sessionKey);
 	} catch (err) {
 		console.error('Error creating session:', err);
 		if (err instanceof Response) {
 			throw err;
 		}
 		badRequestError('Failed to create session: ' + err.message);
+	}
+};
+
+export const GET: RequestHandler = async ({ request, platform }) => {
+	try {
+		const token = request.headers.get('x-admin-token');
+		if (token != ADMIN_TOKEN) {
+			unauthorizedError();
+		}
+
+		const db = new DatabaseService(platform.env.DB);
+		const sessionKeys = await db.getSessionKeys();
+
+		return json(sessionKeys);
+	} catch (err) {
+		console.error('Error getting sessions:', err);
+		if (err instanceof Response) {
+			throw err;
+		}
+		badRequestError('Failed to get sessions: ' + err.message);
 	}
 };

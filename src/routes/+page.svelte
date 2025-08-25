@@ -26,14 +26,14 @@
 		}[];
 	} | null = null;
 
+	let sessionKeys: string[] | null = null;
+
 	let stakeDistributed = false;
 
 	$: totalAllocatedShares =
 		session?.participants.reduce((sum, p) => sum + (p.share || 0), 0) || 0;
 
 	let voterId: number | null = null;
-
-	let loading = false;
 
 	let message = '';
 	let messageType: 'success' | 'error' = 'success';
@@ -57,7 +57,6 @@
 	}
 
 	async function createSession() {
-		loading = true;
 		try {
 			const response = await fetch('/', {
 				method: 'POST',
@@ -69,26 +68,23 @@
 			});
 
 			if (response.ok) {
-				const result = (await response.json()) as { sessionKey: string };
-				sessionKey = result.sessionKey;
+				sessionKey = (await response.json()) as string;
 				showMessage(
 					`Session created successfully! Session key: ${sessionKey}`,
 					'success'
 				);
 				session = null;
+				getSessionKeys();
 			} else {
 				const error = (await response.json()) as { message: string };
 				showMessage(error.message, 'error');
 			}
 		} catch (err) {
 			showMessage(err, 'error');
-		} finally {
-			loading = false;
 		}
 	}
 
 	async function submitVote() {
-		loading = true;
 		try {
 			const response = await fetch(`/${sessionKey}`, {
 				method: 'POST',
@@ -114,13 +110,10 @@
 			}
 		} catch (err) {
 			showMessage(err, 'error');
-		} finally {
-			loading = false;
 		}
 	}
 
 	async function viewSession() {
-		loading = true;
 		try {
 			const headers: any = {
 				'Content-Type': 'application/json'
@@ -143,9 +136,36 @@
 			}
 		} catch (err) {
 			showMessage(err, 'error');
-		} finally {
-			loading = false;
 		}
+	}
+
+	let getSessionKeysTimeout: number;
+	function getSessionKeys() {
+		sessionKeys = null;
+
+		if (getSessionKeysTimeout) {
+			clearTimeout(getSessionKeysTimeout);
+		}
+
+		getSessionKeysTimeout = setTimeout(async () => {
+			try {
+				const response = await fetch('/', {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+						'x-admin-token': adminToken
+					}
+				});
+
+				if (response.ok) {
+					sessionKeys = (await response.json()) as string[];
+				} else {
+					sessionKeys = null;
+				}
+			} catch (err) {
+				showMessage(err, 'error');
+			}
+		}, 300);
 	}
 
 	async function deleteSession() {
@@ -153,7 +173,6 @@
 			return;
 		}
 
-		loading = true;
 		try {
 			const response = await fetch(`/${sessionKey}`, {
 				method: 'DELETE',
@@ -165,6 +184,7 @@
 
 			if (response.ok) {
 				showMessage('Session deleted successfully!', 'success');
+				sessionKeys = sessionKeys.filter((key) => key !== sessionKey);
 				sessionKey = '';
 				session = null;
 			} else {
@@ -173,8 +193,6 @@
 			}
 		} catch (err) {
 			showMessage(err, 'error');
-		} finally {
-			loading = false;
 		}
 	}
 
@@ -203,6 +221,13 @@
 	{#if !session}
 		<div class="section">
 			<h2>Create session</h2>
+			<input
+				bind:value={adminToken}
+				on:input={getSessionKeys}
+				type="password"
+				placeholder="Admin token"
+				class="input"
+			/>
 			{#if adminToken && !session}
 				<input
 					bind:value={newSession.topic}
@@ -222,17 +247,11 @@
 					class="input"
 				/>
 			{/if}
-			<input
-				bind:value={adminToken}
-				type="password"
-				placeholder="Admin token"
-				class="input"
-			/>
 
 			{#if adminToken}
 				<h3>Participants</h3>
 				<div class="section">
-					{#each newSession.participants as participant, i}
+					{#each newSession.participants as participant}
 						<div class="participant">
 							<input
 								bind:value={participant.name}
@@ -252,70 +271,98 @@
 				{#if newSession.participants.length > 2}
 					<button on:click={removeParticipant}>Remove</button>
 				{/if}
-				<button on:click={createSession} disabled={loading}
-					>Create Session</button
-				>
+				<button on:click={createSession}>Create Session</button>
 			{/if}
 		</div>
 	{/if}
 
-	<div class="section">
-		<h2>Session</h2>
-		{#if session}
-			<p><strong>Name:</strong> {session.topic}</p>
-			<p><strong>Description:</strong> {session.description}</p>
-			<p>
-				<strong>Stake:</strong>
-				{session.stake - totalAllocatedShares}
-			</p>
+	{#if (adminToken && sessionKeys) || !adminToken}
+		<div class="section">
+			<h2>
+				{#if session}
+					Session {sessionKey}
+				{:else if sessionKeys}
+					Select session
+				{:else}
+					Session
+				{/if}
+			</h2>
+			{#if session}
+				<p><strong>Name:</strong> {session.topic}</p>
+				<p><strong>Description:</strong> {session.description}</p>
+				<p>
+					<strong>Stake:</strong>
+					{session.stake - totalAllocatedShares}
+				</p>
 
-			<h3>Participants</h3>
-			{#each session.participants as participant}
-				<div class="section">
-					<p>
-						<strong>Name:</strong>
-						{participant.name}
-					</p>
-					{#if voterId || participant.share || !participant.id}
-						<p><strong>Description:</strong> {participant.description}</p>
-						{#if participant.id}
-							<input
-								bind:value={participant.share}
-								on:input={() => {
-									stakeDistributed = totalAllocatedShares == session.stake;
-								}}
-								type="number"
-								step="0.01"
-								min="0"
-								placeholder="Share"
-								class="input"
-							/>
+				<h3>Participants</h3>
+				{#each session.participants as participant}
+					<div class="section">
+						<p>
+							<strong>Name:</strong>
+							{participant.name}
+						</p>
+						{#if voterId || participant.share || !participant.id}
+							{#if participant.description}
+								<p><strong>Description:</strong> {participant.description}</p>
+							{/if}
+							{#if participant.id}
+								<input
+									bind:value={participant.share}
+									on:input={() => {
+										stakeDistributed = totalAllocatedShares == session.stake;
+									}}
+									type="number"
+									step="0.01"
+									min="0"
+									placeholder="Share"
+									class="input"
+								/>
+							{:else}
+								<p><strong>Share:</strong> {participant.share || 0}</p>
+							{/if}
 						{:else}
-							<p><strong>Share:</strong> {participant.share || 0}</p>
+							<button on:click={() => selectParticipant(participant)}
+								>This is me</button
+							>
 						{/if}
-					{:else}
-						<button on:click={() => selectParticipant(participant)}
-							>This is me</button
-						>
-					{/if}
-				</div>
-			{/each}
+					</div>
+				{/each}
 
-			{#if stakeDistributed}
-				<button on:click={submitVote} disabled={loading}>Submit Vote</button>
+				{#if stakeDistributed}
+					<button on:click={submitVote}>Submit Vote</button>
+				{/if}
+			{:else if adminToken}
+				{#if sessionKeys && sessionKeys.length > 0}
+					<ul>
+						{#each sessionKeys as key}
+							<li>
+								<button on:click={() => (sessionKey = key) && viewSession()}
+									>View {key}</button
+								>
+								{#if adminToken}
+									<button on:click={() => (sessionKey = key) && deleteSession()}
+										>Delete</button
+									>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p>No sessions available.</p>
+				{/if}
+			{:else}
+				<input
+					bind:value={sessionKey}
+					placeholder="Session key"
+					class="input"
+				/>
+				{#if sessionKey}
+					<button on:click={viewSession}>View Session</button>
+				{/if}
 			{/if}
-		{:else}
-			<input bind:value={sessionKey} placeholder="Session key" class="input" />
-			{#if sessionKey}
-				<button on:click={viewSession} disabled={loading}>View Session</button>
-			{/if}
-			{#if adminToken}
-				<button on:click={deleteSession} disabled={loading}
-					>Delete Session</button
-				>
-			{/if}
-		{/if}
-	</div>
+		</div>
+	{/if}
 </main>
 
 <style lang="scss">
@@ -323,6 +370,13 @@
 		background: black;
 		color: #888;
 		font-family: sans-serif;
+	}
+
+	ul {
+		margin: 0rem;
+		li {
+			margin-bottom: 0.5rem;
+		}
 	}
 
 	h1,
