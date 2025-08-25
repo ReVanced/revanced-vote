@@ -32,11 +32,12 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 			Array<number>
 		> = await db.getParticipantShares(sessionId);
 
+		const participantNames = Object.keys(participantShares);
+		const participantLength = participantNames.length;
+
 		if (!token) {
-			const participantNames = Object.keys(participantShares);
-			const participantLength = participantNames.length;
 			for (const name of participantNames) {
-				if (participantShares[name].length == participantLength) continue;
+				if (participantShares[name].length == participantLength - 1) continue;
 
 				const participants = await db.getParticipants(sessionId);
 
@@ -52,7 +53,7 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 		const participants = Object.entries(participantShares).map(
 			([name, shares]) => ({
 				name,
-				share: shares.reduce((sum, value) => sum + value, 0) / shares.length
+				share: shares.reduce((sum, value) => sum + value, 0) / participantLength
 			})
 		);
 

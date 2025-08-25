@@ -137,7 +137,8 @@ export class DatabaseService {
 			const { name, share } = result;
 
 			if (!participantShares[name]) participantShares[name] = [];
-			participantShares[name].push(share);
+
+			if (share != null) participantShares[name].push(share);
 		});
 
 		return participantShares;

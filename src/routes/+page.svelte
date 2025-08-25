@@ -103,6 +103,7 @@
 
 			if (response.ok) {
 				showMessage('Vote submitted successfully!', 'success');
+				voterId = null;
 				await viewSession();
 			} else {
 				const error = (await response.json()) as { message: string };
@@ -210,7 +211,10 @@
 </svelte:head>
 
 <main>
-	<h1>ReVanced Vote</h1>
+	<header>
+		<img src="logo.svg" />
+		<h1>ReVanced Vote</h1>
+	</header>
 
 	{#if message}
 		<div class="message {messageType}">
@@ -329,7 +333,7 @@
 					</div>
 				{/each}
 
-				{#if stakeDistributed}
+				{#if stakeDistributed && voterId}
 					<button on:click={submitVote}>Submit Vote</button>
 				{/if}
 			{:else if adminToken}
@@ -396,6 +400,21 @@
 		}
 	}
 
+	header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+
+		img {
+			max-height: 5rem;
+		}
+
+		h1 {
+			text-align: center;
+		}
+	}
 	main {
 		max-width: 800px;
 		margin: 0 auto;
