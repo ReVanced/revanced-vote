@@ -60,6 +60,61 @@
 
 # 🗳️ ReVanced Vote
 
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/ReVanced/revanced-vote/release.yml)
 ![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)
 
-This repository contains the source code of ReVanced Vote.
+Share-based voting system for ReVanced.
+
+❓ About
+
+Using ReVanced Vote, sessions can be created where participants vote to share a stake between all participants.
+
+💪 Features
+
+- 🛡️ Admin control
+- 🔢 Manage multiple sessions at once
+- 🔒 Anonymous voting until the vote is finalized
+- ✅ Simple and intuitive user interface
+
+## 🚀 How to get started
+
+To get started with ReVanced Vote, pnpm is recommended, but npm can also be used.
+Follow the steps below to get started with ReVanced Vote:
+
+1. Run `git clone git@github.com:ReVanced/revanced-vote.git && cd revanced-vote` to clone the repository
+2. Run `pnpm install` to install dependencies
+3. Run `pnpm db:create` to create the database
+4. Edit the `wrangler.toml` file to configure your database id
+5. Copy [.env.example](.env.example) to `.env` and fill in the required values
+6. Run `pnpm build` to build the project
+7. Run `pnpm deploy` to deploy the project
+
+## 📚 Everything else
+
+### 📙 Contributing
+
+Thank you for considering contributing to ReVanced Vote. You can find the contribution
+guidelines [here](CONTRIBUTING.md).
+
+### 🛠️ Building
+
+To build ReVanced Vote, pnpm is recommended, but npm can also be used.
+Follow the steps below to build ReVanced Vote:
+
+1. Run `git clone git@github.com:ReVanced/revanced-vote.git && cd revanced-vote` to clone the repository
+2. Run `pnpm install` to install dependencies
+3. Run `pnpm db:migration:apply` to create the database
+4. Edit the `wrangler.toml` file to configure your database id
+5. Copy [.env.example](.env.example) to `.env` and fill in the required values
+6. Run `pnpm build` to build the project
+7. Run
+   - `pnpm dev` to start the development server
+   - `pnpm db:migration:create <migration-name>` to create a new database migration
+   - `pnpm db:migration:apply` to apply the database migrations
+
+## 📜 Licence
+
+ReVanced Vote is licensed under the AGPLv3 licence. Please see the [licence file](LICENSE) for more information.
+[tl;dr](https://www.tldrlegal.com/license/gnu-affero-general-public-license-v3-agpl-3-0) you may copy, distribute and
+modify ReVanced Vote as long as you track changes/dates in source files.
+Any modifications to ReVanced Vote must also be made available under the GPL along with build & install instructions.

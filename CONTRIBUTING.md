@@ -60,38 +60,38 @@
 
 # 👋 Contribution guidelines
 
-This document describes how to contribute to ReVanced Website.
+This document describes how to contribute to ReVanced Vote.
 
 ## 📖 Resources to help you get started
 
 * Our [backlog](https://github.com/orgs/ReVanced/projects/12) is where we keep track of what we're working on
-* [Issues](https://github.com/ReVanced/revanced-website/issues) are where we keep track of bugs and feature requests
+* [Issues](https://github.com/ReVanced/revanced-vote/issues) are where we keep track of bugs and feature requests
 
 ## 🙏 Submitting a feature request
 
 Features can be requested by opening an issue using the
-[feature request issue template](https://github.com/ReVanced/revanced-website/issues/new?assignees=&labels=feature-request&projects=&template=feature-issue.yml&title=feat%3A+%3Ctitle%3E).
+[feature request issue template](https://github.com/ReVanced/revanced-vote/issues/new?assignees=&labels=feature-request&projects=&template=feature-issue.yml&title=feat%3A+%3Ctitle%3E).
 
 > [!NOTE]
-> Requests can be accepted or rejected at the discretion of maintainers of ReVanced Website.
+> Requests can be accepted or rejected at the discretion of maintainers of ReVanced Vote.
 > Good motivation has to be provided for a request to be accepted.
 
 ## 🐞 Submitting a bug report
 
-If you encounter a bug while using the ReVanced Website, open an issue using the
-[bug report issue template](https://github.com/ReVanced/revanced-website/issues/new?assignees=&labels=bug&projects=&template=bug-issue.yml&title=bug%3A+%3Ctitle%3E).
+If you encounter a bug while using the ReVanced Vote, open an issue using the
+[bug report issue template](https://github.com/ReVanced/revanced-vote/issues/new?assignees=&labels=bug&projects=&template=bug-issue.yml&title=bug%3A+%3Ctitle%3E).
 
 ## 📝 How to contribute
 
 1. Before contributing, it is recommended to open an issue to discuss your change
-with the maintainers of ReVanced Website. This will help you determine whether your change is acceptable
+with the maintainers of ReVanced Vote. This will help you determine whether your change is acceptable
 and whether it is worth your time to implement it
 2. Development happens on the `dev` branch. Fork the repository and create your branch from `dev`
 3. Commit your changes
 4. Submit a pull request to the `dev` branch of the repository and reference issues
 that your pull request closes in the description of your pull request
 5. Our team will review your pull request and provide feedback. Once your pull request is approved,
-it will be merged into the `dev` branch and will be included in the next release of ReVanced Website
+it will be merged into the `dev` branch and will be included in the next release of ReVanced Vote
 
-❤️ Thank you for considering contributing to ReVanced Website,
+❤️ Thank you for considering contributing to ReVanced Vote,
 ReVanced

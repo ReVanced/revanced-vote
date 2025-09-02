@@ -3,12 +3,11 @@ import type { RequestHandler } from './$types';
 import { DatabaseService } from '$lib/database';
 import { badRequestError, notFoundError, unauthorizedError } from '$lib/utils';
 import type { SubmitVoteRequest } from '$lib/types';
-import { ADMIN_TOKEN } from '$env/static/private';
 
 export const GET: RequestHandler = async ({ params, request, platform }) => {
 	try {
 		const token = request.headers.get('x-admin-token');
-		if (token && token != ADMIN_TOKEN) {
+		if (token && token != platform.env.ADMIN_TOKEN) {
 			unauthorizedError();
 		}
 
@@ -145,7 +144,7 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 export const DELETE: RequestHandler = async ({ params, request, platform }) => {
 	try {
 		const adminToken = request.headers.get('x-admin-token');
-		if (adminToken != ADMIN_TOKEN) {
+		if (adminToken != platform.env.ADMIN_TOKEN) {
 			unauthorizedError();
 		}
 

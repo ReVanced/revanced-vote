@@ -1,7 +1,13 @@
 name = "revanced-vote"
+main = ".svelte-kit/cloudflare/_worker.js"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".svelte-kit/cloudflare"
+binding = "ASSETS"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "revanced-vote"
-database_id = "database-id"
+database_id = "c7f81127-5fa2-41ef-825f-935f11971c3d"

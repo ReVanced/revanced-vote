@@ -58,7 +58,7 @@
 
 	async function createSession() {
 		try {
-			const response = await fetch('/', {
+			const response = await fetch('/api', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -86,7 +86,7 @@
 
 	async function submitVote() {
 		try {
-			const response = await fetch(`/${sessionKey}`, {
+			const response = await fetch(`/api/${sessionKey}`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -124,7 +124,7 @@
 				headers['x-admin-token'] = adminToken;
 			}
 
-			const response = await fetch(`/${sessionKey}`, {
+			const response = await fetch(`/api/${sessionKey}`, {
 				method: 'GET',
 				headers
 			});
@@ -144,13 +144,18 @@
 	function getSessionKeys() {
 		sessionKeys = null;
 
+		if (!adminToken) {
+			message = null;
+			return;
+		}
+
 		if (getSessionKeysTimeout) {
 			clearTimeout(getSessionKeysTimeout);
 		}
 
 		getSessionKeysTimeout = setTimeout(async () => {
 			try {
-				const response = await fetch('/', {
+				const response = await fetch('/api', {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -161,6 +166,8 @@
 				if (response.ok) {
 					sessionKeys = (await response.json()) as string[];
 				} else {
+					const error = (await response.json()) as { message: string };
+					showMessage(error.message, 'error');
 					sessionKeys = null;
 				}
 			} catch (err) {
@@ -175,7 +182,7 @@
 		}
 
 		try {
-			const response = await fetch(`/${sessionKey}`, {
+			const response = await fetch(`/api/${sessionKey}`, {
 				method: 'DELETE',
 				headers: {
 					'Content-Type': 'application/json',
@@ -212,7 +219,7 @@
 
 <main>
 	<header>
-		<img src="logo.svg" />
+		<img alt="ReVanced logo" src="logo.svg" />
 		<h1>ReVanced Vote</h1>
 	</header>
 
@@ -224,7 +231,7 @@
 
 	{#if !session}
 		<div class="section">
-			<h2>Create session</h2>
+			<h2>Admin</h2>
 			<input
 				bind:value={adminToken}
 				on:input={getSessionKeys}
@@ -232,7 +239,11 @@
 				placeholder="Admin token"
 				class="input"
 			/>
-			{#if adminToken && !session}
+		</div>
+
+		{#if sessionKeys}
+			<div class="section">
+				<h2>Create session</h2>
 				<input
 					bind:value={newSession.topic}
 					placeholder="Topic"
@@ -250,9 +261,7 @@
 					placeholder="Stake"
 					class="input"
 				/>
-			{/if}
 
-			{#if adminToken}
 				<h3>Participants</h3>
 				<div class="section">
 					{#each newSession.participants as participant}
@@ -275,12 +284,12 @@
 				{#if newSession.participants.length > 2}
 					<button on:click={removeParticipant}>Remove</button>
 				{/if}
-				<button on:click={createSession}>Create Session</button>
-			{/if}
-		</div>
+				<button on:click={createSession}>Create session</button>
+			</div>
+		{/if}
 	{/if}
 
-	{#if (adminToken && sessionKeys) || !adminToken}
+	{#if sessionKeys || !adminToken}
 		<div class="section">
 			<h2>
 				{#if session}
@@ -288,7 +297,7 @@
 				{:else if sessionKeys}
 					Select session
 				{:else}
-					Session
+					View session
 				{/if}
 			</h2>
 			{#if session}
@@ -336,15 +345,16 @@
 				{#if stakeDistributed && voterId}
 					<button on:click={submitVote}>Submit Vote</button>
 				{/if}
-			{:else if adminToken}
-				{#if sessionKeys && sessionKeys.length > 0}
+			{:else if sessionKeys}
+				{#if sessionKeys.length > 0}
 					<ul>
 						{#each sessionKeys as key}
 							<li>
+								{key}
 								<button on:click={() => (sessionKey = key) && viewSession()}
-									>View {key}</button
+									>View</button
 								>
-								{#if adminToken}
+								{#if sessionKeys}
 									<button on:click={() => (sessionKey = key) && deleteSession()}
 										>Delete</button
 									>
@@ -353,7 +363,7 @@
 						{/each}
 					</ul>
 				{:else}
-					<p>No sessions available.</p>
+					<p>No sessions available. Create a session first.</p>
 				{/if}
 			{:else}
 				<input
@@ -362,10 +372,13 @@
 					class="input"
 				/>
 				{#if sessionKey}
-					<button on:click={viewSession}>View Session</button>
+					<button on:click={viewSession}>View</button>
 				{/if}
 			{/if}
 		</div>
+		{#if session}
+			<button on:click={() => (session = null)}> Go back</button>
+		{/if}
 	{/if}
 </main>
 
@@ -453,6 +466,8 @@
 	}
 
 	button {
+		width: min-content;
+		white-space: nowrap;
 		background: #444;
 		color: white;
 		border: none;

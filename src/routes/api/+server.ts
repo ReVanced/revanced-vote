@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import type { RequestHandler } from '../$types';
 import { DatabaseService } from '$lib/database';
 import {
 	generateSessionKey,
@@ -7,12 +7,11 @@ import {
 	unauthorizedError
 } from '$lib/utils';
 import type { CreateSessionRequest } from '$lib/types';
-import { ADMIN_TOKEN } from '$env/static/private';
 
 export const POST: RequestHandler = async ({ request, platform }) => {
 	try {
 		const token = request.headers.get('x-admin-token');
-		if (token != ADMIN_TOKEN) {
+		if (token != platform.env.ADMIN_TOKEN) {
 			unauthorizedError();
 		}
 
@@ -49,14 +48,14 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		if (err instanceof Response) {
 			throw err;
 		}
-		badRequestError('Failed to create session: ' + err.message);
+		badRequestError('Failed to create session: ' + err.body.message);
 	}
 };
 
 export const GET: RequestHandler = async ({ request, platform }) => {
 	try {
 		const token = request.headers.get('x-admin-token');
-		if (token != ADMIN_TOKEN) {
+		if (token != platform.env.ADMIN_TOKEN) {
 			unauthorizedError();
 		}
 
@@ -69,6 +68,6 @@ export const GET: RequestHandler = async ({ request, platform }) => {
 		if (err instanceof Response) {
 			throw err;
 		}
-		badRequestError('Failed to get sessions: ' + err.message);
+		badRequestError('Failed to get sessions: ' + err.body.message);
 	}
 };
