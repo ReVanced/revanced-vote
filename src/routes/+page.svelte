@@ -338,13 +338,14 @@
 								></textarea>
 							{:else}
 								<p><strong>Share:</strong> {participant.share || 0}</p>
-								<strong>Reasons:</strong>
-
-								<ul>
-									{#each participant.reasons as reason}
-										<li>{reason}</li>
-									{/each}
-								</ul>
+								{#if participant.reasons}
+									<strong>Reasons:</strong>
+									<ul>
+										{#each participant.reasons as reason}
+											<li>{reason}</li>
+										{/each}
+									</ul>
+								{/if}
 							{/if}
 						{:else}
 							<button on:click={() => selectParticipant(participant)}
