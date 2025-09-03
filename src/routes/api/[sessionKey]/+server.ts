@@ -28,7 +28,7 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 
 		const participantShares: Record<
 			string,
-			Array<number>
+			Array<{ share: number; reason: string }>
 		> = await db.getParticipantShares(sessionId);
 
 		const participantNames = Object.keys(participantShares);
@@ -50,9 +50,10 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 		}
 
 		const participants = Object.entries(participantShares).map(
-			([name, shares]) => ({
+			([name, vote]) => ({
 				name,
-				share: shares.reduce((sum, value) => sum + value, 0) / participantLength
+				share: vote.reduce((sum, v) => sum + v.share, 0) / participantLength,
+				reasons: vote.map((v) => v.reason)
 			})
 		);
 
@@ -92,10 +93,28 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 			notFoundError();
 		}
 
+		const allReasonsExist = vote.participants.every(
+			(p) => p.reason && p.reason.trim().length > 0
+		);
+		if (!allReasonsExist) {
+			badRequestError(
+				'One or more participants in the vote do not have a share reason'
+			);
+		}
+
 		const participants = await db.getParticipants(session.id);
 
 		if (vote.participants.length !== participants.length - 1) {
 			badRequestError('Invalid number of share participants.');
+		}
+
+		const voterExists = participants.some((p) => p.id === voterId);
+		if (!voterExists) {
+			badRequestError('Voter is not a participant in this session');
+		}
+
+		if (vote.participants.some((s) => s.id === voterId)) {
+			badRequestError('You cannot vote for yourself');
 		}
 
 		const totalShares = vote.participants.reduce((sum, s) => sum + s.share, 0);
@@ -108,15 +127,6 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 		const hasVotedAlready = await db.voteExists(sessionId, voterId);
 		if (hasVotedAlready) {
 			badRequestError('You have already voted in this session');
-		}
-
-		const voterExists = participants.some((p) => p.id === voterId);
-		if (!voterExists) {
-			badRequestError('Voter is not a participant in this session');
-		}
-
-		if (vote.participants.some((s) => s.id === voterId)) {
-			badRequestError('You cannot vote for yourself');
 		}
 
 		const allShareParticipantsExist = vote.participants.every((s) =>

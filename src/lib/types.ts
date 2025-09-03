@@ -27,6 +27,7 @@ export interface SubmitVoteRequest {
 	participants: Array<{
 		id: number;
 		share: number;
+		reason: string;
 	}>;
 }
 

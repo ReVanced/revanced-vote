@@ -72,9 +72,9 @@ export class DatabaseService {
 			const voteStatements = vote.participants.map((p) =>
 				this.db
 					.prepare(
-						'INSERT INTO votes (session_id, voter_id, recipient_id, share) VALUES (?, ?, ?, ?)'
+						'INSERT INTO votes (session_id, voter_id, recipient_id, share, reason) VALUES (?, ?, ?, ?, ?)'
 					)
-					.bind(sessionId, vote.voterId, p.id, p.share)
+					.bind(sessionId, vote.voterId, p.id, p.share, p.reason)
 			);
 
 			await this.db.batch(voteStatements);
@@ -111,14 +111,15 @@ export class DatabaseService {
 
 	async getParticipantShares(
 		sessionId: number
-	): Promise<Record<string, Array<number>>> {
+	): Promise<Record<string, Array<{ share: number; reason: string }>>> {
 		const { results } = await this.db
 			.prepare(
 				`
 				SELECT 
 					p.name,
 					p.description,
-					v.share
+					v.share,
+					v.reason
 				FROM participants p
 				LEFT JOIN votes v 
 					ON p.id = v.recipient_id AND v.session_id = ?
@@ -129,16 +130,20 @@ export class DatabaseService {
 			.all<{
 				name: string;
 				share: number;
+				reason: string;
 			}>();
 
-		const participantShares: Record<string, Array<number>> = {};
+		const participantShares: Record<
+			string,
+			Array<{ share: number; reason: string }>
+		> = {};
 
 		results.map((result) => {
-			const { name, share } = result;
+			const { name, share, reason } = result;
 
 			if (!participantShares[name]) participantShares[name] = [];
 
-			if (share != null) participantShares[name].push(share);
+			if (share != null) participantShares[name].push({ share, reason });
 		});
 
 		return participantShares;

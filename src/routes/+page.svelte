@@ -23,6 +23,8 @@
 			name: string;
 			description: string;
 			share: number;
+			reason: string;
+			reasons: string[];
 		}[];
 	} | null = null;
 
@@ -94,9 +96,10 @@
 				},
 				body: JSON.stringify({
 					voterId,
-					participants: session.participants.map(({ id, share }) => ({
+					participants: session.participants.map(({ id, share, reason }) => ({
 						id,
-						share: share || 0
+						share: share || 0,
+						reason
 					}))
 				})
 			});
@@ -331,8 +334,17 @@
 									placeholder="Share"
 									class="input"
 								/>
+								<textarea bind:value={participant.reason} placeholder="Reason"
+								></textarea>
 							{:else}
 								<p><strong>Share:</strong> {participant.share || 0}</p>
+								<strong>Reasons:</strong>
+
+								<ul>
+									{#each participant.reasons as reason}
+										<li>{reason}</li>
+									{/each}
+								</ul>
 							{/if}
 						{:else}
 							<button on:click={() => selectParticipant(participant)}
@@ -377,7 +389,7 @@
 			{/if}
 		</div>
 		{#if session}
-			<button on:click={() => (session = null)}> Go back</button>
+			<button on:click={() => (session = voterId = null)}> Go back</button>
 		{/if}
 	{/if}
 </main>
