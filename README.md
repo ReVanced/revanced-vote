@@ -60,7 +60,7 @@
 
 # 🗳️ ReVanced Vote
 
-![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/ReVanced/revanced-vote/release.yml)
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/ReVanced/revanced-vote/deploy.yml)
 ![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)
 
 Share-based voting system for ReVanced.
