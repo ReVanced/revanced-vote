@@ -10,6 +10,8 @@ export interface Participant {
 	id: number;
 	name: string;
 	description: string;
+	roleWeight: number;
+	currencyWeight: number;
 }
 
 export interface CreateSessionRequest {
@@ -19,6 +21,8 @@ export interface CreateSessionRequest {
 	participants: Array<{
 		name: string;
 		description: string;
+		roleWeight: number;
+		currencyWeight: number;
 	}>;
 }
 

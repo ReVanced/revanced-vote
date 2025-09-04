@@ -6,8 +6,8 @@
 		description: '',
 		stake: null,
 		participants: [
-			{ name: '', description: '' },
-			{ name: '', description: '' }
+			{ name: '', description: '', roleWeight: null, currencyWeight: null },
+			{ name: '', description: '', roleWeight: null, currencyWeight: null }
 		]
 	};
 
@@ -43,7 +43,7 @@
 	function addParticipant() {
 		newSession.participants = [
 			...newSession.participants,
-			{ name: '', description: '' }
+			{ name: '', description: '', roleWeight: 1.0, currencyWeight: 1.0 }
 		];
 	}
 
@@ -245,7 +245,7 @@
 		</div>
 
 		{#if sessionKeys}
-			<div class="section">
+			<form class="section">
 				<h2>Create session</h2>
 				<input
 					bind:value={newSession.topic}
@@ -267,8 +267,9 @@
 
 				<h3>Participants</h3>
 				<div class="section">
-					{#each newSession.participants as participant}
+					{#each newSession.participants as participant, i}
 						<div class="participant">
+							<p>Participant {i + 1}</p>
 							<input
 								bind:value={participant.name}
 								placeholder="Name"
@@ -279,21 +280,37 @@
 								placeholder="Description"
 								class="input"
 							></textarea>
+							<input
+								bind:value={participant.roleWeight}
+								placeholder="Role weight"
+								class="input"
+								type="number"
+								step="0.01"
+								min="0.01"
+							/>
+							<input
+								bind:value={participant.currencyWeight}
+								placeholder="Currency weight"
+								class="input"
+								type="number"
+								step="0.01"
+								min="0.01"
+							/>
 						</div>
 					{/each}
 				</div>
 
-				<button on:click={addParticipant}>Add</button>
+				<button on:click={addParticipant}>Add participant</button>
 				{#if newSession.participants.length > 2}
 					<button on:click={removeParticipant}>Remove</button>
 				{/if}
 				<button on:click={createSession}>Create session</button>
-			</div>
+			</form>
 		{/if}
 	{/if}
 
 	{#if sessionKeys || !adminToken}
-		<div class="section">
+		<form class="section">
 			<h2>
 				{#if session}
 					Session {sessionKey}
@@ -338,7 +355,7 @@
 								></textarea>
 							{:else}
 								<p><strong>Share:</strong> {participant.share || 0}</p>
-								{#if participant.reasons}
+								{#if participant.reasons.length > 0}
 									<strong>Reasons:</strong>
 									<ul>
 										{#each participant.reasons as reason}
@@ -388,7 +405,7 @@
 					<button on:click={viewSession}>View</button>
 				{/if}
 			{/if}
-		</div>
+		</form>
 		{#if session}
 			<button on:click={() => (session = voterId = null)}> Go back</button>
 		{/if}

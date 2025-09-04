@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from '../$types';
+import type { RequestHandler } from './$types';
 import { DatabaseService } from '$lib/database';
 import {
 	generateSessionKey,
@@ -25,11 +25,18 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			badRequestError('At least 2 participants are required');
 		}
 
-		for (const participant of body.participants) {
-			if (!participant.name || !participant.description) {
-				badRequestError('Each participant must have a name and description');
+		body.participants.some((p) => {
+			if (
+				!p.name ||
+				!p.description ||
+				!(p.roleWeight > 0) ||
+				!(p.currencyWeight > 0)
+			) {
+				badRequestError(
+					'Each participant must have a name, description, a valid role and currency weight'
+				);
 			}
-		}
+		});
 
 		const sessionKey = generateSessionKey();
 

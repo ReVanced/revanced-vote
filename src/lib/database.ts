@@ -30,9 +30,15 @@ export class DatabaseService {
 		const participantStatements = session.participants.map((participant) =>
 			this.db
 				.prepare(
-					'INSERT INTO participants (session_id, name, description) VALUES (?, ?, ?)'
+					'INSERT INTO participants (session_id, name, description, role_weight, currency_weight) VALUES (?, ?, ?, ?, ?)'
 				)
-				.bind(result.id, participant.name, participant.description)
+				.bind(
+					result.id,
+					participant.name,
+					participant.description,
+					participant.roleWeight,
+					participant.currencyWeight
+				)
 		);
 
 		await this.db.batch(participantStatements);
@@ -57,7 +63,7 @@ export class DatabaseService {
 	async getParticipants(sessionId: number): Promise<Participant[]> {
 		const { results } = await this.db
 			.prepare(
-				'SELECT id, name, description FROM participants WHERE session_id = ?'
+				'SELECT id, name, description, role_weight as roleWeight, currency_weight as currencyWeight FROM participants WHERE session_id = ?'
 			)
 			.bind(sessionId)
 			.all<Participant>();
@@ -109,43 +115,30 @@ export class DatabaseService {
 		}
 	}
 
-	async getParticipantShares(
-		sessionId: number
-	): Promise<Record<string, Array<{ share: number; reason: string }>>> {
+	async getVotes(sessionId: number): Promise<
+		Array<{
+			voterId: number;
+			recipientId: number;
+			share: number;
+			reason: string;
+		}>
+	> {
 		const { results } = await this.db
 			.prepare(
 				`
-				SELECT 
-					p.name,
-					p.description,
-					v.share,
-					v.reason
-				FROM participants p
-				LEFT JOIN votes v 
-					ON p.id = v.recipient_id AND v.session_id = ?
-				WHERE p.session_id = ?;
+				SELECT voter_id as voterId, recipient_id as recipientId, share, reason
+				FROM votes
+				WHERE session_id = ?
 				`
 			)
-			.bind(sessionId, sessionId)
+			.bind(sessionId)
 			.all<{
-				name: string;
+				voterId: number;
+				recipientId: number;
 				share: number;
 				reason: string;
 			}>();
 
-		const participantShares: Record<
-			string,
-			Array<{ share: number; reason: string }>
-		> = {};
-
-		results.map((result) => {
-			const { name, share, reason } = result;
-
-			if (!participantShares[name]) participantShares[name] = [];
-
-			if (share != null) participantShares[name].push({ share, reason });
-		});
-
-		return participantShares;
+		return results;
 	}
 }

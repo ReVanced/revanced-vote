@@ -1,0 +1,2 @@
+ALTER TABLE participants ADD COLUMN role_weight DECIMAL(1, 2) NOT NULL DEFAULT 1;
+ALTER TABLE participants ADD COLUMN currency_weight DECIMAL(1, 2) NOT NULL DEFAULT 1;

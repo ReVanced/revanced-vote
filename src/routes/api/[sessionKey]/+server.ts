@@ -26,42 +26,74 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 
 		const sessionId = session.id;
 
-		const participantShares: Record<
-			string,
-			Array<{ share: number; reason: string }>
-		> = await db.getParticipantShares(sessionId);
+		const votes = await db.getVotes(sessionId);
+		const participants = await db.getParticipants(sessionId);
 
-		const participantNames = Object.keys(participantShares);
-		const participantLength = participantNames.length;
+		const allVoted =
+			participants.length * (participants.length - 1) === votes.length;
 
-		if (!token) {
-			for (const name of participantNames) {
-				if (participantShares[name].length == participantLength - 1) continue;
-
-				const participants = await db.getParticipants(sessionId);
-
-				return json({
-					topic: session.topic,
-					description: session.description,
-					stake: session.stake,
-					participants
-				});
-			}
+		if (!allVoted) {
+			return json({
+				topic: session.topic,
+				description: session.description,
+				stake: session.stake,
+				participants: participants.map((p) => ({
+					id: p.id,
+					name: p.name,
+					description: p.description
+				}))
+			});
 		}
 
-		const participants = Object.entries(participantShares).map(
-			([name, vote]) => ({
-				name,
-				share: vote.reduce((sum, v) => sum + v.share, 0) / participantLength,
-				reasons: vote.map((v) => v.reason)
-			})
+		const participantMap = Object.fromEntries(
+			participants.map((p) => [p.id, p])
 		);
+
+		const weightedSums = participants.map((p) => {
+			const receivedVotes = votes.filter((v) => v.recipientId === p.id);
+
+			const weightedSum = receivedVotes.reduce((sum, v) => {
+				const voter = participantMap[v.voterId]!;
+				return sum + v.share * voter.roleWeight;
+			}, 0);
+
+			const totalVoterWeight = receivedVotes.reduce((sum, v) => {
+				const voter = participantMap[v.voterId]!;
+				return sum + voter.roleWeight;
+			}, 0);
+
+			const avgWeightedVote =
+				totalVoterWeight > 0 ? weightedSum / totalVoterWeight : 0;
+
+			const effectiveScore = avgWeightedVote * p.currencyWeight;
+
+			return {
+				id: p.id,
+				name: p.name,
+				reasons: receivedVotes.filter((v) => v.reason).map((v) => v.reason),
+				effectiveScore
+			};
+		});
+
+		const totalEffectiveScore = weightedSums.reduce(
+			(sum, p) => sum + p.effectiveScore,
+			0
+		);
+
+		const weightedParticipants = weightedSums.map((p) => ({
+			name: p.name,
+			share:
+				totalEffectiveScore > 0
+					? Math.floor((p.effectiveScore / totalEffectiveScore) * session.stake)
+					: 0,
+			reasons: p.reasons
+		}));
 
 		return json({
 			topic: session.topic,
 			description: session.description,
 			stake: session.stake,
-			participants
+			participants: weightedParticipants
 		});
 	} catch (err) {
 		console.error('Error getting session data:', err);
