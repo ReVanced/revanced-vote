@@ -30,13 +30,13 @@ export class DatabaseService {
 		const participantStatements = session.participants.map((participant) =>
 			this.db
 				.prepare(
-					'INSERT INTO participants (session_id, name, role_weight, currency_weight) VALUES (?, ?, ?, ?)'
+					'INSERT INTO participants (session_id, name, role_weight, ppp_weight) VALUES (?, ?, ?, ?)'
 				)
 				.bind(
 					result.id,
 					participant.name,
 					participant.roleWeight,
-					participant.currencyWeight
+					participant.pppWeight
 				)
 		);
 
@@ -62,7 +62,7 @@ export class DatabaseService {
 	async getParticipants(sessionId: number): Promise<Participant[]> {
 		const { results } = await this.db
 			.prepare(
-				'SELECT id, name, description, role_weight as roleWeight, currency_weight as currencyWeight FROM participants WHERE session_id = ?'
+				'SELECT id, name, description, role_weight as roleWeight, ppp_weight as pppWeight FROM participants WHERE session_id = ?'
 			)
 			.bind(sessionId)
 			.all<Participant>();

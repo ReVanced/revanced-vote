@@ -6,8 +6,8 @@
 		description: '',
 		stake: null,
 		participants: [
-			{ name: '', roleWeight: null, currencyWeight: null },
-			{ name: '', roleWeight: null, currencyWeight: null }
+			{ name: '', roleWeight: null, pppWeight: null },
+			{ name: '', roleWeight: null, pppWeight: null }
 		]
 	};
 
@@ -51,7 +51,7 @@
 	function addParticipant() {
 		newSession.participants = [
 			...newSession.participants,
-			{ name: '', roleWeight: 1.0, currencyWeight: 1.0 }
+			{ name: '', roleWeight: null, pppWeight: null }
 		];
 	}
 
@@ -333,8 +333,8 @@
 								min="0.01"
 							/>
 							<input
-								bind:value={participant.currencyWeight}
-								placeholder="Currency weight"
+								bind:value={participant.pppWeight}
+								placeholder="PPP weight"
 								class="input"
 								type="number"
 								step="0.01"

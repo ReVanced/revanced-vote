@@ -26,9 +26,9 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		}
 
 		body.participants.some((p) => {
-			if (!p.name || !(p.roleWeight > 0) || !(p.currencyWeight > 0)) {
+			if (!p.name || !(p.roleWeight > 0) || !(p.pppWeight > 0)) {
 				badRequestError(
-					'Each participant must have a name, a valid role and currency weight'
+					'Each participant must have a name, a valid role and ppp weight'
 				);
 			}
 		});

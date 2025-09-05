@@ -11,7 +11,7 @@ export interface Participant {
 	name: string;
 	description: string;
 	roleWeight: number;
-	currencyWeight: number;
+	pppWeight: number;
 }
 
 export interface CreateSessionRequest {
@@ -21,7 +21,7 @@ export interface CreateSessionRequest {
 	participants: Array<{
 		name: string;
 		roleWeight: number;
-		currencyWeight: number;
+		pppWeight: number;
 	}>;
 }
 

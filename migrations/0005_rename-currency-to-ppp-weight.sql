@@ -8,10 +8,10 @@ CREATE TABLE participants_migration (
     name TEXT NOT NULL,
     description TEXT,
     role_weight DECIMAL(1, 2) NOT NULL DEFAULT 1,
-    currency_weight DECIMAL(1, 2) NOT NULL DEFAULT 1
+    ppp_weight DECIMAL(1, 2) NOT NULL DEFAULT 1
 );
 
-INSERT INTO participants_migration (id, session_id, name, description, role_weight, currency_weight)
+INSERT INTO participants_migration (id, session_id, name, description, role_weight, ppp_weight)
 SELECT id, session_id, name, description, role_weight, currency_weight
 FROM participants;
 

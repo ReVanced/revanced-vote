@@ -67,7 +67,7 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 			const avgWeightedVote =
 				totalVoterWeight > 0 ? weightedSum / totalVoterWeight : 0;
 
-			const effectiveScore = avgWeightedVote * p.currencyWeight;
+			const effectiveScore = avgWeightedVote * p.pppWeight;
 
 			return {
 				id: p.id,
