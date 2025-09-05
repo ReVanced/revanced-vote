@@ -1,7 +1,5 @@
 PRAGMA foreign_keys=off;
 
-BEGIN TRANSACTION;
-
 CREATE TABLE participants_migration (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -18,7 +16,5 @@ FROM participants;
 DROP TABLE participants;
 
 ALTER TABLE participants_migration RENAME TO participants;
-
-COMMIT;
 
 PRAGMA foreign_keys=on;
