@@ -366,7 +366,10 @@
 			</h2>
 			{#if currentSession}
 				<p><strong>Name:</strong> {currentSession.topic}</p>
-				<p><strong>Description:</strong> {currentSession.description}</p>
+				<p class="description">
+					<strong>Description:</strong>
+					{currentSession.description}
+				</p>
 				<p>
 					<strong>Stake:</strong>
 					{currentSession.stake - totalAllocatedShares}
@@ -381,7 +384,10 @@
 								{participant.name}
 							</p>
 							{#if participant.description}
-								<p><strong>Description:</strong> {participant.description}</p>
+								<p class="description">
+									<strong>Description:</strong>
+									{participant.description}
+								</p>
 							{/if}
 
 							{#if adminToken || participant.reasons}
@@ -535,6 +541,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	.description {
+		white-space: pre-line;
 	}
 
 	textarea {
