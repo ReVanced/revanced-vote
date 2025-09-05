@@ -20,7 +20,6 @@ export interface CreateSessionRequest {
 	stake: number;
 	participants: Array<{
 		name: string;
-		description: string;
 		roleWeight: number;
 		currencyWeight: number;
 	}>;
@@ -33,6 +32,11 @@ export interface SubmitVoteRequest {
 		share: number;
 		reason: string;
 	}>;
+}
+
+export interface PatchDescriptionRequest {
+	participantId: number;
+	description: string;
 }
 
 export interface SessionResponse {

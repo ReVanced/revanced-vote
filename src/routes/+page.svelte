@@ -6,14 +6,15 @@
 		description: '',
 		stake: null,
 		participants: [
-			{ name: '', description: '', roleWeight: null, currencyWeight: null },
-			{ name: '', description: '', roleWeight: null, currencyWeight: null }
+			{ name: '', roleWeight: null, currencyWeight: null },
+			{ name: '', roleWeight: null, currencyWeight: null }
 		]
 	};
 
 	let sessionKey = '';
+	let sessionKeys: string[] | null = null;
 
-	let session: {
+	let currentSession: {
 		id: number;
 		topic: string;
 		description: string;
@@ -21,21 +22,28 @@
 		participants: {
 			id: number;
 			name: string;
-			description: string;
-			share: number;
-			reason: string;
-			reasons: string[];
+			description?: string;
+			share?: number;
+			reason?: string;
+			reasons?: string[];
 		}[];
 	} | null = null;
 
-	let sessionKeys: string[] | null = null;
+	$: allDescriptionsSubmitted =
+		currentSession?.participants.every(
+			(p) => p.description && p.description.trim() !== ''
+		) || false;
+
+	let currentParticipant: {
+		id: number;
+		description?: string;
+	} | null = null;
 
 	let stakeDistributed = false;
 
 	$: totalAllocatedShares =
-		session?.participants.reduce((sum, p) => sum + (p.share || 0), 0) || 0;
-
-	let voterId: number | null = null;
+		currentSession?.participants.reduce((sum, p) => sum + (p.share || 0), 0) ||
+		0;
 
 	let message = '';
 	let messageType: 'success' | 'error' = 'success';
@@ -43,7 +51,7 @@
 	function addParticipant() {
 		newSession.participants = [
 			...newSession.participants,
-			{ name: '', description: '', roleWeight: 1.0, currencyWeight: 1.0 }
+			{ name: '', roleWeight: 1.0, currencyWeight: 1.0 }
 		];
 	}
 
@@ -51,11 +59,50 @@
 		newSession.participants = newSession.participants.slice(0, -1);
 	}
 
-	function selectParticipant({ id }: { id: number }) {
-		voterId = id;
-		session.participants = session.participants.filter(
-			({ id }) => id !== voterId
-		);
+	function selectParticipant(participant) {
+		currentParticipant = participant;
+
+		if (allDescriptionsSubmitted) {
+			currentSession.participants = currentSession.participants.filter(
+				(p) => p.id !== currentParticipant.id
+			);
+		} else {
+			currentSession.participants = [participant];
+		}
+	}
+
+	function submitCurrentParticipantDescription() {
+		if (
+			!currentParticipant.description ||
+			currentParticipant.description.trim() === ''
+		) {
+			showMessage('Description cannot be empty', 'error');
+			return;
+		}
+
+		fetch(`/api/${sessionKey}`, {
+			method: 'PATCH',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				participantId: currentParticipant.id,
+				description: currentParticipant.description
+			})
+		})
+			.then(async (response) => {
+				if (response.ok) {
+					showMessage('Description submitted successfully!', 'success');
+					currentParticipant = null;
+					await viewSession();
+				} else {
+					const error = (await response.json()) as { message: string };
+					showMessage(error.message, 'error');
+				}
+			})
+			.catch((err) => {
+				showMessage(err, 'error');
+			});
 	}
 
 	async function createSession() {
@@ -75,7 +122,7 @@
 					`Session created successfully! Session key: ${sessionKey}`,
 					'success'
 				);
-				session = null;
+				currentSession = null;
 				getSessionKeys();
 			} else {
 				const error = (await response.json()) as { message: string };
@@ -92,21 +139,23 @@
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'x-voter-id': voterId.toString()
+					'x-voter-id': currentParticipant.id.toString()
 				},
 				body: JSON.stringify({
-					voterId,
-					participants: session.participants.map(({ id, share, reason }) => ({
-						id,
-						share: share || 0,
-						reason
-					}))
+					voterId: currentParticipant.id,
+					participants: currentSession.participants.map(
+						({ id, share, reason }) => ({
+							id,
+							share: share || 0,
+							reason
+						})
+					)
 				})
 			});
 
 			if (response.ok) {
 				showMessage('Vote submitted successfully!', 'success');
-				voterId = null;
+				currentParticipant = null;
 				await viewSession();
 			} else {
 				const error = (await response.json()) as { message: string };
@@ -133,7 +182,7 @@
 			});
 
 			if (response.ok) {
-				session = await response.json();
+				currentSession = await response.json();
 			} else {
 				const error = (await response.json()) as { message: string };
 				showMessage(error.message, 'error');
@@ -197,7 +246,7 @@
 				showMessage('Session deleted successfully!', 'success');
 				sessionKeys = sessionKeys.filter((key) => key !== sessionKey);
 				sessionKey = '';
-				session = null;
+				currentSession = null;
 			} else {
 				const error = (await response.json()) as { message: string };
 				showMessage(error.message, 'error');
@@ -232,7 +281,7 @@
 		</div>
 	{/if}
 
-	{#if !session}
+	{#if !currentSession}
 		<div class="section">
 			<h2>Admin</h2>
 			<input
@@ -275,11 +324,6 @@
 								placeholder="Name"
 								class="input"
 							/>
-							<textarea
-								bind:value={participant.description}
-								placeholder="Description"
-								class="input"
-							></textarea>
 							<input
 								bind:value={participant.roleWeight}
 								placeholder="Role weight"
@@ -312,7 +356,7 @@
 	{#if sessionKeys || !adminToken}
 		<form class="section">
 			<h2>
-				{#if session}
+				{#if currentSession}
 					Session {sessionKey}
 				{:else if sessionKeys}
 					Select session
@@ -320,40 +364,27 @@
 					View session
 				{/if}
 			</h2>
-			{#if session}
-				<p><strong>Name:</strong> {session.topic}</p>
-				<p><strong>Description:</strong> {session.description}</p>
+			{#if currentSession}
+				<p><strong>Name:</strong> {currentSession.topic}</p>
+				<p><strong>Description:</strong> {currentSession.description}</p>
 				<p>
 					<strong>Stake:</strong>
-					{session.stake - totalAllocatedShares}
+					{currentSession.stake - totalAllocatedShares}
 				</p>
 
 				<h3>Participants</h3>
-				{#each session.participants as participant}
-					<div class="section">
-						<p>
-							<strong>Name:</strong>
-							{participant.name}
-						</p>
-						{#if voterId || participant.share || !participant.id}
+				{#if allDescriptionsSubmitted || adminToken}
+					{#each currentSession.participants as participant}
+						<div class="section">
+							<p>
+								<strong>Name:</strong>
+								{participant.name}
+							</p>
 							{#if participant.description}
 								<p><strong>Description:</strong> {participant.description}</p>
 							{/if}
-							{#if participant.id}
-								<input
-									bind:value={participant.share}
-									on:input={() => {
-										stakeDistributed = totalAllocatedShares == session.stake;
-									}}
-									type="number"
-									step="0.01"
-									min="0"
-									placeholder="Share"
-									class="input"
-								/>
-								<textarea bind:value={participant.reason} placeholder="Reason"
-								></textarea>
-							{:else}
+
+							{#if adminToken || participant.reasons}
 								<p><strong>Share:</strong> {participant.share || 0}</p>
 								{#if participant.reasons.length > 0}
 									<strong>Reasons:</strong>
@@ -363,16 +394,53 @@
 										{/each}
 									</ul>
 								{/if}
+							{:else if !currentParticipant}
+								<button on:click={() => selectParticipant(participant)}>
+									This is me
+								</button>
+							{:else}
+								<input
+									bind:value={participant.share}
+									on:input={() => {
+										stakeDistributed =
+											totalAllocatedShares == currentSession.stake;
+									}}
+									type="number"
+									step="0.01"
+									min="0"
+									placeholder="Share"
+									class="input"
+								/>
+								<textarea bind:value={participant.reason} placeholder="Reason"
+								></textarea>
 							{/if}
-						{:else}
-							<button on:click={() => selectParticipant(participant)}
-								>This is me</button
-							>
-						{/if}
-					</div>
-				{/each}
-
-				{#if stakeDistributed && voterId}
+						</div>
+					{/each}
+				{:else}
+					{#each currentSession.participants.filter((p) => !p.description) as participant}
+						<div class="section">
+							<p>
+								<strong>Name:</strong>
+								{participant.name}
+							</p>
+							{#if !currentParticipant}
+								<button on:click={() => selectParticipant(participant)}>
+									Set a description
+								</button>
+							{:else}
+								<textarea
+									bind:value={currentParticipant.description}
+									placeholder="Description"
+									class="input"
+								></textarea>
+								<button on:click={() => submitCurrentParticipantDescription()}
+									>Submit</button
+								>
+							{/if}
+						</div>
+					{/each}
+				{/if}
+				{#if stakeDistributed && currentParticipant}
 					<button on:click={submitVote}>Submit Vote</button>
 				{/if}
 			{:else if sessionKeys}
@@ -406,8 +474,10 @@
 				{/if}
 			{/if}
 		</form>
-		{#if session}
-			<button on:click={() => (session = voterId = null)}> Go back</button>
+		{#if currentSession}
+			<button on:click={() => (currentSession = currentParticipant = null)}>
+				Back to start</button
+			>
 		{/if}
 	{/if}
 </main>

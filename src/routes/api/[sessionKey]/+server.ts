@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { DatabaseService } from '$lib/database';
 import { badRequestError, notFoundError, unauthorizedError } from '$lib/utils';
-import type { SubmitVoteRequest } from '$lib/types';
+import type { PatchDescriptionRequest, SubmitVoteRequest } from '$lib/types';
 
 export const GET: RequestHandler = async ({ params, request, platform }) => {
 	try {
@@ -29,20 +29,22 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 		const votes = await db.getVotes(sessionId);
 		const participants = await db.getParticipants(sessionId);
 
-		const allVoted =
-			participants.length * (participants.length - 1) === votes.length;
+		if (!token) {
+			const allVoted =
+				participants.length * (participants.length - 1) === votes.length;
 
-		if (!allVoted) {
-			return json({
-				topic: session.topic,
-				description: session.description,
-				stake: session.stake,
-				participants: participants.map((p) => ({
-					id: p.id,
-					name: p.name,
-					description: p.description
-				}))
-			});
+			if (!allVoted) {
+				return json({
+					topic: session.topic,
+					description: session.description,
+					stake: session.stake,
+					participants: participants.map((p) => ({
+						id: p.id,
+						name: p.name,
+						description: p.description
+					}))
+				});
+			}
 		}
 
 		const participantMap = Object.fromEntries(
@@ -82,6 +84,7 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 
 		const weightedParticipants = weightedSums.map((p) => ({
 			name: p.name,
+			description: participantMap[p.id].description,
 			share:
 				totalEffectiveScore > 0
 					? Math.floor((p.effectiveScore / totalEffectiveScore) * session.stake)
@@ -149,6 +152,11 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 			badRequestError('You cannot vote for yourself');
 		}
 
+		const allHaveDescriptions = participants.every((p) => p.description);
+		if (!allHaveDescriptions) {
+			badRequestError('All participants must have a description before voting');
+		}
+
 		const totalShares = vote.participants.reduce((sum, s) => sum + s.share, 0);
 		if (totalShares != session.stake) {
 			badRequestError('Total shares must equal session stake');
@@ -180,6 +188,53 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 			throw err;
 		}
 		badRequestError('Failed to submit vote: ' + err.body.message);
+	}
+};
+
+export const PATCH: RequestHandler = async ({ params, request, platform }) => {
+	try {
+		const sessionKey = params.sessionKey;
+		if (!sessionKey) {
+			badRequestError('Session key is required');
+		}
+
+		const body: PatchDescriptionRequest = await request.json();
+		if (!body.participantId || !body.description) {
+			badRequestError('Participant ID and description are required');
+		}
+		const db = new DatabaseService(platform.env.DB);
+		const session = await db.getSession(sessionKey);
+		if (!session) {
+			notFoundError();
+		}
+
+		const participants = await db.getParticipants(session.id);
+		const participant = participants.find((p) => p.id === body.participantId);
+		if (!participant) {
+			badRequestError('Participant does not exist in this session');
+		}
+
+		if (participant.description) {
+			badRequestError('Description has already been set and cannot be changed');
+		}
+
+		const success = await db.setParticipantDescription(
+			body.participantId,
+			body.description
+		);
+		if (!success) {
+			badRequestError('Failed to update participant description');
+		}
+		return json({ success: true });
+	} catch (err) {
+		console.error('Error updating participant description:', err);
+		if (err instanceof Response) {
+			throw err;
+		}
+
+		badRequestError(
+			'Failed to update participant description: ' + err.body.message
+		);
 	}
 };
 

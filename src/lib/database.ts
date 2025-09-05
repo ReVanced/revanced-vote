@@ -30,12 +30,11 @@ export class DatabaseService {
 		const participantStatements = session.participants.map((participant) =>
 			this.db
 				.prepare(
-					'INSERT INTO participants (session_id, name, description, role_weight, currency_weight) VALUES (?, ?, ?, ?, ?)'
+					'INSERT INTO participants (session_id, name, role_weight, currency_weight) VALUES (?, ?, ?, ?)'
 				)
 				.bind(
 					result.id,
 					participant.name,
-					participant.description,
 					participant.roleWeight,
 					participant.currencyWeight
 				)
@@ -100,6 +99,22 @@ export class DatabaseService {
 			.first<{ count: number }>();
 
 		return count > 0;
+	}
+
+	async setParticipantDescription(
+		participantId: number,
+		description: string
+	): Promise<boolean> {
+		try {
+			const { success } = await this.db
+				.prepare('UPDATE participants SET description = ? WHERE id = ?')
+				.bind(description, participantId)
+				.run();
+			return success;
+		} catch (error) {
+			console.error('Error updating participant description:', error);
+			return false;
+		}
 	}
 
 	async deleteSession(sessionKey: string): Promise<boolean> {
