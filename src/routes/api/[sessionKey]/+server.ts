@@ -34,6 +34,8 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 				participants.length * (participants.length - 1) === votes.length;
 
 			if (!allVoted) {
+				const allHaveDescriptions = participants.every((p) => p.description);
+
 				return json({
 					topic: session.topic,
 					description: session.description,
@@ -42,6 +44,10 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 						id: p.id,
 						name: p.name,
 						description: p.description
+							? token || allHaveDescriptions
+								? p.description
+								: 'Submitted'
+							: null
 					}))
 				});
 			}
@@ -83,6 +89,7 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 		);
 
 		const weightedParticipants = weightedSums.map((p) => ({
+			id: p.id,
 			name: p.name,
 			description: participantMap[p.id].description,
 			share:
@@ -193,13 +200,18 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 
 export const PATCH: RequestHandler = async ({ params, request, platform }) => {
 	try {
+		const token = request.headers.get('x-admin-token');
+		if (token && token != platform.env.ADMIN_TOKEN) {
+			unauthorizedError();
+		}
+
 		const sessionKey = params.sessionKey;
 		if (!sessionKey) {
 			badRequestError('Session key is required');
 		}
 
 		const body: PatchDescriptionRequest = await request.json();
-		if (!body.participantId || !body.description) {
+		if (!body.participantId || !(token || body.description)) {
 			badRequestError('Participant ID and description are required');
 		}
 		const db = new DatabaseService(platform.env.DB);
@@ -214,7 +226,7 @@ export const PATCH: RequestHandler = async ({ params, request, platform }) => {
 			badRequestError('Participant does not exist in this session');
 		}
 
-		if (participant.description) {
+		if (!token && participant.description) {
 			badRequestError('Description has already been set and cannot be changed');
 		}
 

@@ -69,32 +69,40 @@
 	function selectParticipant(participant) {
 		currentParticipant = participant;
 
-		if (allDescriptionsSubmitted) {
+		if (!adminToken && allDescriptionsSubmitted) {
 			currentSession.participants = currentSession.participants.filter(
 				(p) => p.id !== currentParticipant.id
 			);
 		} else {
-			currentSession.participants = [participant];
+			currentSession.participants = [
+				{
+					...participant
+				}
+			];
 		}
 	}
 
 	function submitCurrentParticipantDescription() {
-		if (
-			!currentParticipant.description ||
-			currentParticipant.description.trim() === ''
-		) {
+		if (!(adminToken || currentParticipant.description)) {
 			showMessage('Description cannot be empty', 'error');
 			return;
 		}
 
+		const headers = {
+			'Content-Type': 'application/json'
+		};
+		if (adminToken) {
+			headers['x-admin-token'] = adminToken;
+		}
+
 		fetch(`/api/${sessionKey}`, {
 			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json'
-			},
+			headers,
 			body: JSON.stringify({
 				participantId: currentParticipant.id,
 				description: currentParticipant.description
+					? currentParticipant.description
+					: null
 			})
 		})
 			.then(async (response) => {
@@ -383,76 +391,63 @@
 				</p>
 
 				<h3>Participants</h3>
-				{#if allDescriptionsSubmitted || adminToken}
-					{#each currentSession.participants as participant}
-						<div class="section">
-							<p>
-								<strong>Name:</strong>
-								{participant.name}
-							</p>
-							{#if participant.description}
-								<p class="description">
-									<strong>Description:</strong>
-									{participant.description}
-								</p>
-							{/if}
+				{#each currentSession.participants as participant}
+					<div class="section">
+						<p>
+							<strong>Name:</strong>
+							{participant.name}
+						</p>
 
-							{#if adminToken || participant.reasons}
-								<p><strong>Share:</strong> {participant.share || 0}</p>
-								{#if participant.reasons.length > 0}
-									<strong>Reasons:</strong>
-									<ul>
-										{#each participant.reasons as reason}
-											<li>{reason}</li>
-										{/each}
-									</ul>
-								{/if}
-							{:else if !currentParticipant}
-								<button on:click={() => selectParticipant(participant)}>
-									This is me
-								</button>
-							{:else}
-								<input
-									bind:value={participant.share}
-									on:input={() => {
-										stakeDistributed =
-											totalAllocatedShares == currentSession.stake;
-									}}
-									type="number"
-									step="0.01"
-									min="0"
-									placeholder="Share"
-									class="input"
-								/>
-								<textarea bind:value={participant.reason} placeholder="Reason"
-								></textarea>
-							{/if}
-						</div>
-					{/each}
-				{:else}
-					{#each currentSession.participants.filter((p) => !p.description) as participant}
-						<div class="section">
-							<p>
-								<strong>Name:</strong>
-								{participant.name}
+						{#if participant.description}
+							<p class="description">
+								<strong>Description:</strong>
+								{participant.description}
 							</p>
-							{#if !currentParticipant}
-								<button on:click={() => selectParticipant(participant)}>
-									Set a description
-								</button>
-							{:else}
-								<textarea
-									bind:value={currentParticipant.description}
-									placeholder="Description"
-									class="input"
-								></textarea>
-								<button on:click={() => submitCurrentParticipantDescription()}
-									>Submit</button
-								>
+						{/if}
+
+						{#if adminToken || participant.share}
+							<p><strong>Share:</strong> {participant.share || 0}</p>
+							{#if participant.reasons.length > 0}
+								<strong>Reasons:</strong>
+								<ul>
+									{#each participant.reasons as reason}
+										<li>{reason}</li>
+									{/each}
+								</ul>
 							{/if}
-						</div>
-					{/each}
-				{/if}
+						{:else if allDescriptionsSubmitted}
+							<input
+								bind:value={participant.share}
+								on:input={() => {
+									stakeDistributed =
+										totalAllocatedShares == currentSession.stake;
+								}}
+								type="number"
+								step="0.01"
+								min="0"
+								placeholder="Share"
+								class="input"
+							/>
+							<textarea bind:value={participant.reason} placeholder="Reason"
+							></textarea>
+						{/if}
+						{#if (!currentParticipant && adminToken) || !(currentParticipant || participant.description)}
+							<button on:click={() => selectParticipant(participant)}>
+								This is me
+							</button>
+						{/if}
+						{#if currentParticipant && (adminToken || !participant.description)}
+							<textarea
+								bind:value={currentParticipant.description}
+								placeholder="Description"
+								class="input"
+							></textarea>
+							<button on:click={() => submitCurrentParticipantDescription()}
+								>Submit</button
+							>
+						{/if}
+					</div>
+				{/each}
 				{#if stakeDistributed && currentParticipant}
 					<button on:click={submitVote}>Submit Vote</button>
 				{/if}
