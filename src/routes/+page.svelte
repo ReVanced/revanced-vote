@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	let adminToken = '';
 
 	let newSession = {
@@ -47,6 +49,11 @@
 
 	let message = '';
 	let messageType: 'success' | 'error' = 'success';
+
+	onMount(() => {
+		const queryParams = new URLSearchParams(window.location.search);
+		if ((sessionKey = queryParams.get('sessionKey'))) viewSession();
+	});
 
 	function addParticipant() {
 		newSession.participants = [
