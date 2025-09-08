@@ -62,7 +62,7 @@ export class DatabaseService {
 	async getParticipants(sessionId: number): Promise<Participant[]> {
 		const { results } = await this.db
 			.prepare(
-				'SELECT id, name, description, role_weight as roleWeight, ppp_weight as pppWeight FROM participants WHERE session_id = ?'
+				'SELECT id, name, description, role_weight as roleWeight, ppp_weight as pppWeight, confirmed FROM participants WHERE session_id = ?'
 			)
 			.bind(sessionId)
 			.all<Participant>();
@@ -101,14 +101,17 @@ export class DatabaseService {
 		return count > 0;
 	}
 
-	async setParticipantDescription(
-		participantId: number,
-		description: string
-	): Promise<boolean> {
+	async updateParticipant(participant: Participant): Promise<boolean> {
 		try {
 			const { success } = await this.db
-				.prepare('UPDATE participants SET description = ? WHERE id = ?')
-				.bind(description, participantId)
+				.prepare(
+					`
+					UPDATE participants 
+					SET description = ?, confirmed = ?
+					WHERE id = ?
+					`
+				)
+				.bind(participant.description, participant.confirmed, participant.id)
 				.run();
 			return success;
 		} catch (error) {

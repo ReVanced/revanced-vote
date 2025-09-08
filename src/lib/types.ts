@@ -12,6 +12,7 @@ export interface Participant {
 	description: string;
 	roleWeight: number;
 	pppWeight: number;
+	confirmed: boolean;
 }
 
 export interface CreateSessionRequest {
@@ -31,20 +32,5 @@ export interface SubmitVoteRequest {
 		id: number;
 		share: number;
 		reason: string;
-	}>;
-}
-
-export interface PatchDescriptionRequest {
-	participantId: number;
-	description: string;
-}
-
-export interface SessionResponse {
-	topic: string;
-	description: string;
-	stake: number;
-	participants: Array<{
-		name: string;
-		share: number;
 	}>;
 }

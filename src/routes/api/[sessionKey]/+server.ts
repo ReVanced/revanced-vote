@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { DatabaseService } from '$lib/database';
 import { badRequestError, notFoundError, unauthorizedError } from '$lib/utils';
-import type { PatchDescriptionRequest, SubmitVoteRequest } from '$lib/types';
+import type { Participant, SubmitVoteRequest } from '$lib/types';
 
 export const GET: RequestHandler = async ({ params, request, platform }) => {
 	try {
@@ -99,10 +99,13 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 			reasons: p.reasons
 		}));
 
+		const allConfirmed = participants.every((p) => p.confirmed);
+
 		return json({
 			topic: session.topic,
 			description: session.description,
 			stake: session.stake,
+			confirmed: allConfirmed,
 			participants: weightedParticipants
 		});
 	} catch (err) {
@@ -210,10 +213,13 @@ export const PATCH: RequestHandler = async ({ params, request, platform }) => {
 			badRequestError('Session key is required');
 		}
 
-		const body: PatchDescriptionRequest = await request.json();
-		if (!body.participantId || !(token || body.description)) {
-			badRequestError('Participant ID and description are required');
+		const updateParticipant = (await request.json()) as Partial<Participant> & {
+			id: number;
+		};
+		if (!updateParticipant.id) {
+			badRequestError('Participant ID required');
 		}
+
 		const db = new DatabaseService(platform.env.DB);
 		const session = await db.getSession(sessionKey);
 		if (!session) {
@@ -221,31 +227,42 @@ export const PATCH: RequestHandler = async ({ params, request, platform }) => {
 		}
 
 		const participants = await db.getParticipants(session.id);
-		const participant = participants.find((p) => p.id === body.participantId);
-		if (!participant) {
+		const existing = participants.find((p) => p.id === updateParticipant.id);
+		if (!existing) {
 			badRequestError('Participant does not exist in this session');
 		}
 
-		if (!token && participant.description) {
-			badRequestError('Description has already been set and cannot be changed');
+		const updatedParticipant: Participant = { ...existing };
+
+		if (updateParticipant.description !== undefined) {
+			if (!token && existing.description != existing.description) {
+				unauthorizedError();
+			}
+
+			updatedParticipant.description = updateParticipant.description;
 		}
 
-		const success = await db.setParticipantDescription(
-			body.participantId,
-			body.description
-		);
-		if (!success) {
-			badRequestError('Failed to update participant description');
+		if (updateParticipant.confirmed !== undefined) {
+			if (!token && updateParticipant.confirmed == false) {
+				unauthorizedError();
+			}
+
+			updatedParticipant.confirmed = updateParticipant.confirmed;
 		}
+
+		const success = await db.updateParticipant(updatedParticipant);
+		if (!success) {
+			badRequestError('Failed to update participant');
+		}
+
 		return json({ success: true });
 	} catch (err) {
 		console.error('Error updating participant description:', err);
 		if (err instanceof Response) {
 			throw err;
 		}
-
 		badRequestError(
-			'Failed to update participant description: ' + err.body.message
+			'Failed to update participant description: ' + (err as any).body?.message
 		);
 	}
 };

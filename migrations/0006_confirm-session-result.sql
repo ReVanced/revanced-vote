@@ -1,0 +1,1 @@
+ALTER TABLE participants ADD COLUMN confirmed BOOLEAN DEFAULT FALSE;

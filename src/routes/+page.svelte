@@ -21,6 +21,7 @@
 		topic: string;
 		description: string;
 		stake: number;
+		confirmed: boolean;
 		participants: {
 			id: number;
 			name: string;
@@ -39,6 +40,7 @@
 	let currentParticipant: {
 		id: number;
 		description?: string;
+		confirmed: boolean;
 	} | null = null;
 
 	let stakeDistributed = false;
@@ -69,7 +71,11 @@
 	function selectParticipant(participant) {
 		currentParticipant = participant;
 
-		if (!adminToken && allDescriptionsSubmitted) {
+		if (
+			participant.reasons?.length == 0 &&
+			!adminToken &&
+			allDescriptionsSubmitted
+		) {
 			currentSession.participants = currentSession.participants.filter(
 				(p) => p.id !== currentParticipant.id
 			);
@@ -82,12 +88,7 @@
 		}
 	}
 
-	function submitCurrentParticipantDescription() {
-		if (!(adminToken || currentParticipant.description)) {
-			showMessage('Description cannot be empty', 'error');
-			return;
-		}
-
+	function updateCurrentParticipant() {
 		const headers = {
 			'Content-Type': 'application/json'
 		};
@@ -99,7 +100,7 @@
 			method: 'PATCH',
 			headers,
 			body: JSON.stringify({
-				participantId: currentParticipant.id,
+				...currentParticipant,
 				description: currentParticipant.description
 					? currentParticipant.description
 					: null
@@ -107,7 +108,7 @@
 		})
 			.then(async (response) => {
 				if (response.ok) {
-					showMessage('Description submitted successfully!', 'success');
+					showMessage('Updated participant successfully!', 'success');
 					currentParticipant = null;
 					await viewSession();
 				} else {
@@ -389,7 +390,10 @@
 					<strong>Stake:</strong>
 					{currentSession.stake - totalAllocatedShares}
 				</p>
-
+				<p>
+					<strong>Status:</strong>
+					{currentSession.confirmed ? 'Ended' : 'Ongoing'}
+				</p>
 				<h3>Participants</h3>
 				{#each currentSession.participants as participant}
 					<div class="section">
@@ -405,7 +409,7 @@
 							</p>
 						{/if}
 
-						{#if adminToken || participant.share}
+						{#if adminToken || participant.reasons}
 							<p><strong>Share:</strong> {participant.share || 0}</p>
 							{#if participant.reasons.length > 0}
 								<strong>Reasons:</strong>
@@ -415,7 +419,14 @@
 									{/each}
 								</ul>
 							{/if}
-						{:else if allDescriptionsSubmitted}
+							{#if currentParticipant}
+								<button
+									on:click={() =>
+										(currentParticipant.confirmed = true) &&
+										updateCurrentParticipant()}>Confirm share</button
+								>
+							{/if}
+						{:else if allDescriptionsSubmitted && currentParticipant}
 							<input
 								bind:value={participant.share}
 								on:input={() => {
@@ -431,7 +442,7 @@
 							<textarea bind:value={participant.reason} placeholder="Reason"
 							></textarea>
 						{/if}
-						{#if (!currentParticipant && adminToken) || !(currentParticipant || participant.description)}
+						{#if !currentSession.confirmed && !currentParticipant && ((participant.share && !currentSession.confirmed) || !participant.description || adminToken || allDescriptionsSubmitted)}
 							<button on:click={() => selectParticipant(participant)}>
 								This is me
 							</button>
@@ -442,8 +453,7 @@
 								placeholder="Description"
 								class="input"
 							></textarea>
-							<button on:click={() => submitCurrentParticipantDescription()}
-								>Submit</button
+							<button on:click={() => updateCurrentParticipant()}>Submit</button
 							>
 						{/if}
 					</div>
