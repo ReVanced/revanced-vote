@@ -40,6 +40,7 @@
 	let currentParticipant: {
 		id: number;
 		description?: string;
+		reasons?: string[];
 		confirmed: boolean;
 	} | null = null;
 
@@ -69,22 +70,14 @@
 	}
 
 	function selectParticipant(participant) {
-		currentParticipant = participant;
+		currentParticipant = {
+			...participant
+		};
 
-		if (
-			participant.reasons?.length == 0 &&
-			!adminToken &&
-			allDescriptionsSubmitted
-		) {
+		if (participant.description && !participant.reasons) {
 			currentSession.participants = currentSession.participants.filter(
 				(p) => p.id !== currentParticipant.id
 			);
-		} else {
-			currentSession.participants = [
-				{
-					...participant
-				}
-			];
 		}
 	}
 
@@ -419,13 +412,6 @@
 									{/each}
 								</ul>
 							{/if}
-							{#if currentParticipant}
-								<button
-									on:click={() =>
-										(currentParticipant.confirmed = true) &&
-										updateCurrentParticipant()}>Confirm share</button
-								>
-							{/if}
 						{:else if allDescriptionsSubmitted && currentParticipant}
 							<input
 								bind:value={participant.share}
@@ -447,7 +433,7 @@
 								This is me
 							</button>
 						{/if}
-						{#if currentParticipant && (adminToken || !participant.description)}
+						{#if currentParticipant && currentParticipant.id == participant.id && (adminToken || !participant.description)}
 							<textarea
 								bind:value={currentParticipant.description}
 								placeholder="Description"
@@ -458,7 +444,15 @@
 						{/if}
 					</div>
 				{/each}
-				{#if stakeDistributed && currentParticipant}
+				{#if currentParticipant?.reasons}
+					{#if !adminToken}
+						<button
+							on:click={() =>
+								(currentParticipant.confirmed = true) &&
+								updateCurrentParticipant()}>Confirm shares</button
+						>
+					{/if}
+				{:else if currentParticipant && stakeDistributed}
 					<button on:click={submitVote}>Submit Vote</button>
 				{/if}
 			{:else if sessionKeys}
