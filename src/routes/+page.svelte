@@ -342,7 +342,7 @@
 				/>
 
 				<h3>Participants</h3>
-				<ul class="section-inner">
+				<ul>
 					{#each newSession.participants as participant}
 						<li class="section section-inner participant">
 							<input
@@ -410,79 +410,82 @@
 					{currentSession.confirmed ? 'Ended' : 'Ongoing'}
 				</p>
 				<h3>Participants ({currentSession.participants.length})</h3>
-				{#each currentSession.participants as participant}
-					<div class="section section-inner">
-						<h4>{participant.name}</h4>
+				<ul>
+					{#each currentSession.participants as participant}
+						<li class="section section-inner">
+							<h4>{participant.name}</h4>
 
-						{#if participant.description}
-							<p class="description">
-								{participant.description}
-							</p>
-						{/if}
-
-						{#if adminToken || participant.reasons}
-							<p><strong>Share:</strong> {participant.share || 0}</p>
-							{#if participant.reasons.length > 0}
-								<strong>Reasons:</strong>
-								<ul>
-									{#each participant.reasons as reason}
-										<li>{reason}</li>
-									{/each}
-								</ul>
+							{#if participant.description}
+								<p class="description">
+									{participant.description}
+								</p>
 							{/if}
-						{:else if allDescriptionsSubmitted && currentParticipant}
-							<div id="share-inputs">
-								<input
-									bind:value={participant.share}
-									on:input={() => {
-										participant.percentage =
-											((participant.share || 0) / currentSession.stake) * 100;
-									}}
-									type="number"
-									step="0.01"
-									min="0"
-									placeholder="Share"
-									class="share-input"
-								/>
 
-								<input
-									bind:value={participant.percentage}
-									on:input={(e) => {
-										const raw = parseFloat(
-											(e.target as HTMLInputElement).value
-										);
-										const percentage = isNaN(raw) ? 0 : raw;
-										participant.share =
-											(currentSession.stake * percentage) / 100;
-									}}
-									type="number"
-									step="0.01"
-									min="0"
-									placeholder="Percentage"
-									class="share-input"
-								/>
-							</div>
-							<textarea bind:value={participant.reason} placeholder="Reason"
-							></textarea>
-						{:else if participant.voted}
-							<p><strong>Voted:</strong> Yes</p>
-						{/if}
-						{#if !currentSession.confirmed && !currentParticipant && (adminToken || !participant.description || !participant.voted)}
-							<button on:click={() => selectParticipant(participant)}>
-								This is me
-							</button>
-						{/if}
-						{#if currentParticipant && currentParticipant.id == participant.id && (adminToken || !participant.description)}
-							<textarea
-								bind:value={currentParticipant.description}
-								placeholder="Description"
-								class="input"
-							></textarea>
-							<button on:click={() => updateCurrentParticipant()}>Submit</button
-							>
-						{/if}
-					</div>
-				{/each}
+							{#if adminToken || participant.reasons}
+								<p><strong>Share:</strong> {participant.share || 0}</p>
+								{#if participant.reasons.length > 0}
+									<strong>Reasons:</strong>
+									<ul>
+										{#each participant.reasons as reason}
+											<li>{reason}</li>
+										{/each}
+									</ul>
+								{/if}
+							{:else if allDescriptionsSubmitted && currentParticipant}
+								<div id="share-inputs">
+									<input
+										bind:value={participant.share}
+										on:input={() => {
+											participant.percentage =
+												((participant.share || 0) / currentSession.stake) * 100;
+										}}
+										type="number"
+										step="0.01"
+										min="0"
+										placeholder="Share"
+										class="share-input"
+									/>
+
+									<input
+										bind:value={participant.percentage}
+										on:input={(e) => {
+											const raw = parseFloat(
+												(e.target as HTMLInputElement).value
+											);
+											const percentage = isNaN(raw) ? 0 : raw;
+											participant.share =
+												(currentSession.stake * percentage) / 100;
+										}}
+										type="number"
+										step="0.01"
+										min="0"
+										placeholder="Percentage"
+										class="share-input"
+									/>
+								</div>
+								<textarea bind:value={participant.reason} placeholder="Reason"
+								></textarea>
+							{:else if participant.voted}
+								<p><strong>Voted:</strong> Yes</p>
+							{/if}
+							{#if !currentSession.confirmed && !currentParticipant && (adminToken || !participant.description || !participant.voted)}
+								<button on:click={() => selectParticipant(participant)}>
+									This is me
+								</button>
+							{/if}
+							{#if currentParticipant && currentParticipant.id == participant.id && (adminToken || !participant.description)}
+								<textarea
+									bind:value={currentParticipant.description}
+									placeholder="Description"
+									class="input"
+								></textarea>
+								<button on:click={() => updateCurrentParticipant()}
+									>Submit</button
+								>
+							{/if}
+						</li>
+					{/each}
+				</ul>
 				{#if currentParticipant?.reasons}
 					{#if !adminToken}
 						<button
@@ -672,7 +675,7 @@
 
 		border-radius: 1rem;
 
-		.participant {
+		.section-inner {
 			padding: 0.5rem;
 		}
 	}
