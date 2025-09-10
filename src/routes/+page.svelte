@@ -27,6 +27,7 @@
 			name: string;
 			description?: string;
 			share?: number;
+			percentage?: number;
 			reason?: string;
 			reasons?: string[];
 		}[];
@@ -43,8 +44,6 @@
 		reasons?: string[];
 		confirmed: boolean;
 	} | null = null;
-
-	let stakeDistributed = false;
 
 	$: totalAllocatedShares =
 		currentSession?.participants.reduce((sum, p) => sum + (p.share || 0), 0) ||
@@ -413,18 +412,37 @@
 								</ul>
 							{/if}
 						{:else if allDescriptionsSubmitted && currentParticipant}
-							<input
-								bind:value={participant.share}
-								on:input={() => {
-									stakeDistributed =
-										totalAllocatedShares == currentSession.stake;
-								}}
-								type="number"
-								step="0.01"
-								min="0"
-								placeholder="Share"
-								class="input"
-							/>
+							<div id="share-inputs">
+								<input
+									bind:value={participant.share}
+									on:input={() => {
+										participant.percentage =
+											((participant.share || 0) / currentSession.stake) * 100;
+									}}
+									type="number"
+									step="0.01"
+									min="0"
+									placeholder="Share"
+									class="share-input"
+								/>
+
+								<input
+									bind:value={participant.percentage}
+									on:input={(e) => {
+										const raw = parseFloat(
+											(e.target as HTMLInputElement).value
+										);
+										const percentage = isNaN(raw) ? 0 : raw;
+										participant.share =
+											(currentSession.stake * percentage) / 100;
+									}}
+									type="number"
+									step="0.01"
+									min="0"
+									placeholder="Percentage"
+									class="share-input"
+								/>
+							</div>
 							<textarea bind:value={participant.reason} placeholder="Reason"
 							></textarea>
 						{/if}
@@ -452,7 +470,7 @@
 								updateCurrentParticipant()}>Confirm shares</button
 						>
 					{/if}
-				{:else if currentParticipant && stakeDistributed}
+				{:else if currentParticipant && totalAllocatedShares == currentSession.stake}
 					<button on:click={submitVote}>Submit Vote</button>
 				{/if}
 			{:else if sessionKeys}
@@ -578,6 +596,16 @@
 		&:hover {
 			background: #444;
 			outline: 1px solid #666;
+		}
+	}
+
+	#share-inputs {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+
+		.share-input {
+			flex: 1;
 		}
 	}
 
