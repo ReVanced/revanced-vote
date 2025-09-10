@@ -342,10 +342,9 @@
 				/>
 
 				<h3>Participants</h3>
-				<div class="section">
-					{#each newSession.participants as participant, i}
-						<div class="participant">
-							<p>Participant {i + 1}</p>
+				<ul class="section-inner">
+					{#each newSession.participants as participant}
+						<li class="section section-inner participant">
 							<input
 								bind:value={participant.name}
 								placeholder="Name"
@@ -367,24 +366,31 @@
 								step="0.01"
 								min="0.01"
 							/>
-						</div>
+						</li>
 					{/each}
-				</div>
+				</ul>
 
-				<button on:click={addParticipant}>Add participant</button>
-				{#if newSession.participants.length > 2}
-					<button on:click={removeParticipant}>Remove</button>
-				{/if}
-				<button on:click={createSession}>Create session</button>
+				<div>
+					<button on:click={addParticipant}>Add participant</button>
+					{#if newSession.participants.length > 2}
+						<button on:click={removeParticipant}>Remove</button>
+					{/if}
+					<button on:click={createSession}>Create session</button>
+				</div>
 			</form>
 		{/if}
 	{/if}
 
 	{#if sessionKeys || !adminToken}
+		{#if currentSession}
+			<button on:click={() => (currentSession = currentParticipant = null)}>
+				◀ Back to start
+			</button>
+		{/if}
 		<form class="section">
 			<h2>
 				{#if currentSession}
-					Session {sessionKey}
+					{currentSession.topic}
 				{:else if sessionKeys}
 					Select session
 				{:else}
@@ -392,9 +398,7 @@
 				{/if}
 			</h2>
 			{#if currentSession}
-				<p><strong>Name:</strong> {currentSession.topic}</p>
 				<p class="description">
-					<strong>Description:</strong>
 					{currentSession.description}
 				</p>
 				<p>
@@ -407,15 +411,11 @@
 				</p>
 				<h3>Participants ({currentSession.participants.length})</h3>
 				{#each currentSession.participants as participant}
-					<div class="section">
-						<p>
-							<strong>Name:</strong>
-							{participant.name}
-						</p>
+					<div class="section section-inner">
+						<h4>{participant.name}</h4>
 
 						{#if participant.description}
 							<p class="description">
-								<strong>Description:</strong>
 								{participant.description}
 							</p>
 						{/if}
@@ -532,43 +532,52 @@
 				{/if}
 			{/if}
 		</form>
-		{#if currentSession}
-			<button on:click={() => (currentSession = currentParticipant = null)}>
-				Back to start</button
-			>
-		{/if}
 	{/if}
 </main>
 
 <style lang="scss">
 	:root {
-		background: black;
-		color: #888;
+		background: rgb(26, 25, 31);
+		color: rgb(172, 193, 210);
 		font-family: sans-serif;
 	}
 
 	ul {
-		margin: 0rem;
-		li {
-			margin-bottom: 0.5rem;
-		}
+		display: flex;
+		gap: 1rem;
+		flex-direction: column;
+		padding: 0;
+		margin: 0;
+		list-style: none;
 	}
 
-	h1,
-	h2,
-	h3,
-	strong {
-		color: white;
+	h1 {
+		color: rgb(224, 242, 255);
 	}
 
 	h2,
 	h3 {
 		&:after {
-			padding-top: 1rem;
 			content: '';
 			display: block;
-			border-bottom: #888 solid 1px;
+			width: 100%;
+			height: 1px;
+			background: rgb(55, 62, 78);
+			margin-top: 1rem;
 		}
+	}
+
+	h2 {
+		margin-top: 0;
+	}
+	h2,
+	h3,
+	h4 {
+		color: rgb(224, 242, 255);
+	}
+	h4 {
+		font-size: 1.1rem;
+		margin: 0;
 	}
 
 	header {
@@ -586,13 +595,19 @@
 			text-align: center;
 		}
 	}
+
 	main {
-		max-width: 800px;
 		margin: 0 auto;
 		padding: 1rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	@media (min-width: 600px) {
+		main {
+			max-width: 800px;
+		}
 	}
 
 	.description {
@@ -607,23 +622,18 @@
 
 	input,
 	textarea {
-		background: #333;
-		color: white;
-		border: none;
-		padding: 0.5rem;
-		outline: 1px solid #555;
+		padding: 1rem;
+		border-radius: 12px;
+		border: 1px solid rgb(55, 62, 78);
+		background-color: transparent;
+		color: rgb(175, 211, 244);
 
 		&:focus {
-			outline: 1px solid #777;
+			outline: 1px solid rgb(158, 213, 255);
 		}
 
 		&::placeholder {
-			color: #888;
-		}
-
-		&:hover {
-			background: #444;
-			outline: 1px solid #666;
+			color: rgb(172, 193, 210);
 		}
 	}
 
@@ -638,25 +648,18 @@
 	}
 
 	button {
+		border-radius: 100px;
 		width: min-content;
+		font-weight: bold;
 		white-space: nowrap;
-		background: #444;
-		color: white;
+		background: transparent;
+		color: rgb(158, 213, 255);
 		border: none;
-		padding: 0.5rem 1rem;
+		padding: 16px 16px;
 		cursor: pointer;
 
 		&:hover {
-			background: #555;
-		}
-
-		&:disabled {
-			background: #666;
-			cursor: not-allowed;
-		}
-
-		&:focus {
-			outline: 1px solid #777;
+			filter: brightness(95%);
 		}
 	}
 
@@ -664,11 +667,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		background: #222;
-		padding: 0rem 1rem 1rem 1rem;
+		padding: 2rem;
+		background: rgb(31, 31, 38);
+
+		border-radius: 1rem;
 
 		.participant {
-			padding: 0.5rem 0;
+			padding: 0.5rem;
 		}
 	}
 
@@ -683,7 +688,7 @@
 	}
 
 	.message {
-		padding: 0.5rem;
+		padding: 1rem;
 		border-radius: 4px;
 		margin-bottom: 1rem;
 	}
