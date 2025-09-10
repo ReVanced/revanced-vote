@@ -47,7 +47,8 @@ export const GET: RequestHandler = async ({ params, request, platform }) => {
 							? token || allHaveDescriptions
 								? p.description
 								: 'Submitted'
-							: null
+							: null,
+						voted: votes.some((v) => v.voterId === p.id)
 					}))
 				});
 			}

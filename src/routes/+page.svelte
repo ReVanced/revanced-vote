@@ -30,6 +30,7 @@
 			percentage?: number;
 			reason?: string;
 			reasons?: string[];
+			voted?: boolean;
 		}[];
 	} | null = null;
 
@@ -445,8 +446,10 @@
 							</div>
 							<textarea bind:value={participant.reason} placeholder="Reason"
 							></textarea>
+						{:else if participant.voted}
+							<p><strong>Voted:</strong> Yes</p>
 						{/if}
-						{#if !currentSession.confirmed && !currentParticipant && ((participant.share && !currentSession.confirmed) || !participant.description || adminToken || allDescriptionsSubmitted)}
+						{#if !currentSession.confirmed && !currentParticipant && (adminToken || !participant.description || !participant.voted)}
 							<button on:click={() => selectParticipant(participant)}>
 								This is me
 							</button>
