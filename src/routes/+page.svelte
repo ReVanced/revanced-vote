@@ -58,6 +58,24 @@
 		if ((sessionKey = queryParams.get('sessionKey'))) viewSession();
 	});
 
+	function distributeEqually() {
+		const numParticipants = currentSession.participants.length;
+		const equalShare = parseFloat(
+			(currentSession.stake / numParticipants).toFixed(2)
+		);
+
+		currentSession.participants
+			.slice(0, numParticipants)
+			.forEach((participant) => {
+				participant.share = equalShare;
+				participant.percentage = parseFloat(
+					((equalShare / currentSession.stake) * 100).toFixed(2)
+				);
+			});
+
+		currentSession = { ...currentSession };
+	}
+
 	function addParticipant() {
 		newSession.participants = [
 			...newSession.participants,
@@ -387,7 +405,7 @@
 					<strong>Status:</strong>
 					{currentSession.confirmed ? 'Ended' : 'Ongoing'}
 				</p>
-				<h3>Participants</h3>
+				<h3>Participants ({currentSession.participants.length})</h3>
 				{#each currentSession.participants as participant}
 					<div class="section">
 						<p>
@@ -473,8 +491,15 @@
 								updateCurrentParticipant()}>Confirm shares</button
 						>
 					{/if}
-				{:else if currentParticipant && totalAllocatedShares == currentSession.stake}
-					<button on:click={submitVote}>Submit Vote</button>
+				{:else if currentParticipant}
+					{#if totalAllocatedShares == currentSession.stake}
+						<button on:click={submitVote}>Submit Vote</button>
+					{:else}
+						<p>
+							Total allocated shares must equal the stake to submit the vote.
+						</p>
+						<button on:click={distributeEqually}>Distribute equally</button>
+					{/if}
 				{/if}
 			{:else if sessionKeys}
 				{#if sessionKeys.length > 0}
