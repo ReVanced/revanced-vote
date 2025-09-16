@@ -168,9 +168,9 @@ export const POST: RequestHandler = async ({ params, request, platform }) => {
 			badRequestError('All participants must have a description before voting');
 		}
 
-		const negativeShare = vote.participants.some((p) => p.share < 0);
-		if (negativeShare) {
-			badRequestError('No share can be nagative');
+		const positiveShares = vote.participants.every((p) => p.share >= 0);
+		if (!positiveShares) {
+			badRequestError('All shares must be positive');
 		}
 
 		const totalShares = vote.participants.reduce((sum, s) => sum + s.share, 0);
